@@ -33,20 +33,23 @@
   .col{max-width:31rem;margin:0 auto}
 
   /* the card */
-  .card{min-height:100vh;min-height:100svh;display:grid;place-content:center;justify-items:center;gap:.15em;text-align:center}
+  .stage{height:230vh;height:230svh;margin-inline:-20px}
+  .pin{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden}
+  .card,.reveal{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;text-align:center;padding-inline:20px}
+  .card{gap:.15em}
   .names{letter-spacing:.05em}
   .date{letter-spacing:.05em;min-height:1.8em}
   .caret{display:inline-block;width:.55em;margin-left:.08em;border-bottom:1px solid currentColor;transform:translateY(-.22em);animation:blink 1.1s steps(1) infinite}
   @keyframes blink{50%{opacity:0}}
 
   /* the photo, framed as on the live site */
-  .intro{display:grid;margin-bottom:2.5rem}
-  .js .reveal{opacity:0;transform:translateY(14px);will-change:opacity,transform}
-  .photo{margin:0 auto 4.5rem;max-width:24rem;background:#fff;padding:10px;box-shadow:0 1px 2px rgba(43,40,36,.10),0 6px 18px -10px rgba(43,40,36,.25)}
-  .photo img{display:block;width:100%;height:auto;max-width:100%}
+  .intro{display:grid;margin-bottom:1.6rem}
+  .js .reveal{opacity:0;transform:scale(.97);will-change:opacity,transform}
+  .photo{margin:0 auto;width:fit-content;max-width:min(24rem,100%);background:#fff;padding:10px;box-shadow:0 1px 2px rgba(43,40,36,.10),0 6px 18px -10px rgba(43,40,36,.25)}
+  .photo img{display:block;width:auto;height:auto;max-width:100%;max-height:58vh;max-height:58svh}
 
   /* the questions */
-  .index{margin-top:0;border-bottom:1px solid color-mix(in srgb,currentColor 18%,transparent)}
+  .index{margin-top:6vh;border-bottom:1px solid color-mix(in srgb,currentColor 18%,transparent)}
   .sec{border-top:1px solid color-mix(in srgb,currentColor 18%,transparent)}
   .row{all:unset;box-sizing:border-box;display:flex;width:100%;justify-content:space-between;align-items:baseline;gap:24px;min-height:44px;padding:17px 0;cursor:pointer;-webkit-tap-highlight-color:transparent}
   .mark{flex:none;width:1ch;text-align:center;opacity:.6;transition:transform .5s ease}
@@ -83,19 +86,22 @@
 
 <div class="col">
 
-  <header class="card">
-    <h1 class="names"><span class="sr">James &amp; Eliza</span><span id="names" aria-hidden="true">James &amp; Eliza</span><span class="caret" id="caret" aria-hidden="true"></span></h1>
-    <p class="date" id="date">October 2027</p>
-  </header>
-
-  <div class="reveal" id="reveal">
+  <section class="stage" id="stage">
+    <div class="pin">
+  <header class="card" id="card">
+        <h1 class="names"><span class="sr">James &amp; Eliza</span><span id="names" aria-hidden="true">James &amp; Eliza</span><span class="caret" id="caret" aria-hidden="true"></span></h1>
+        <p class="date" id="date">October 2027</p>
+      </header>
+      <div class="reveal" id="reveal">
   <div class="intro typed">
-    <p>Saturday, October 9, 2027</p>
-    <p class="soft">Goodstone Inn, Middleburg, Virginia</p>
-  </div>
-
-  <figure class="photo"><img src="photo.webp" alt="James and Eliza hugging on a lawn in front of a stone house" width="900" height="1125"></figure>
-  </div>
+        <p>Saturday, October 9, 2027</p>
+        <p class="soft">Goodstone Inn, Middleburg, Virginia</p>
+      </div>
+    
+      <figure class="photo"><img src="photo.webp" alt="James and Eliza hugging on a lawn in front of a stone house" width="900" height="1125"></figure>
+      </div>
+    </div>
+  </section>
 
   <div class="index typed">
 
@@ -372,14 +378,17 @@
   addEventListener('resize', onScroll);
   target = shown = progress(); draw(shown);
 
-  /* ---- the first scroll: names fade out, date, place and photo fade in ---- */
-  var card = document.querySelector('.card'), reveal = document.getElementById('reveal'), rtick = false;
+  /* ---- the first scroll: the names stay put and fade out; date, place and photo fade in, in the same spot ---- */
+  var card = document.getElementById('card'), reveal = document.getElementById('reveal'), stage = document.getElementById('stage'), rtick = false;
+  function ease(x){ x = Math.min(Math.max(x, 0), 1); return x*x*(3 - 2*x); }
   function fade(){
-    var h = innerHeight || 800, p = Math.min(Math.max(scrollY / (h * .7), 0), 1);
-    var e = p*p*(3 - 2*p);
-    card.style.opacity = (1 - e).toFixed(3);
-    reveal.style.opacity = reduce ? (p > 0 ? 1 : 0) : e.toFixed(3);
-    reveal.style.transform = reduce ? 'none' : 'translateY(' + ((1 - e)*14).toFixed(1) + 'px)';
+    var h = innerHeight || 800, span = Math.max(1, stage.offsetHeight - h);
+    var p = Math.min(Math.max(-stage.getBoundingClientRect().top / span, 0), 1);
+    var out = ease(p / .4), inn = ease((p - .3) / .4);
+    card.style.opacity = (1 - out).toFixed(3);
+    card.style.visibility = out >= 1 ? 'hidden' : 'visible';
+    reveal.style.opacity = inn.toFixed(3);
+    reveal.style.transform = reduce ? 'none' : 'scale(' + (.97 + .03*inn).toFixed(4) + ')';
     rtick = false;
   }
   addEventListener('scroll', function(){ if (!rtick){ rtick = true; requestAnimationFrame(fade); } }, {passive:true});
