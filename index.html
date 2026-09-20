@@ -18,13 +18,15 @@
   :root{
     --sky:#F7F4EE;
     --ink:#2A2622;
+    --link:#2C5AA0;
     --type:"Cutive Mono","Courier Prime","Courier New",Courier,monospace;
     color-scheme:light;
   }
   html{background:var(--sky)}
-  body{margin:0;background:var(--sky);color:var(--ink);font:400 16px/1.8 var(--type);-webkit-font-smoothing:antialiased;padding-inline:20px;transition:color 1.4s ease}
+  body{overflow-anchor:none;margin:0;background:var(--sky);color:var(--ink);font:400 16px/1.8 var(--type);-webkit-font-smoothing:antialiased;padding-inline:20px;transition:color 1.4s ease}
   h1,p{margin:0;font:inherit}
-  a{color:inherit;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:4px;text-decoration-color:color-mix(in srgb,currentColor 40%,transparent)}
+  a{color:var(--link);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;text-decoration-skip-ink:auto}
+  a:hover{text-decoration-thickness:2px}
   a:focus-visible,.row:focus-visible{outline:1px dashed currentColor;outline-offset:4px}
   .soft{color:color-mix(in srgb,currentColor 64%,var(--sky))}
   .k{display:inline-block;white-space:pre}
@@ -226,13 +228,30 @@
     <section class="sec">
       <button class="row" aria-expanded="false"><span>What should we wear?</span><span class="mark" aria-hidden="true">+</span></button>
       <div class="body"><div class="inner"><div>
-        <p>Feel your best, look your best.</p>
         <div class="blk">
-          <span class="tab"><span>Friday</span><span>Cocktail attire.</span></span>
-          <span class="tab"><span>Saturday</span><span>Sport coat and tie. Long dress.</span></span>
-          <span class="tab"><span>Sunday</span><span>Anything goes.</span></span>
+          <p>Look your best, feel your best.</p>
+          <p class="soft">It's a wedding, so don't look like a schlep. But wear what makes you feel most confident for the occasion.</p>
         </div>
-        <p class="soft">October days are warm and the nights get cold. Bring a jacket. Parts of the evening are on grass, so skip thin heels.</p>
+        <div class="blk">
+          <span>Friday — welcome drinks</span>
+          <span class="soft">Cocktail attire.</span>
+          <span class="soft">Guys: a blazer or a nice button-down. No tie needed.</span>
+          <span class="soft">Women: a cocktail dress, jumpsuit or dressy separates.</span>
+        </div>
+        <div class="blk">
+          <span>Saturday — the wedding</span>
+          <span class="soft">Guys: sport coat and tie. A suit works too.</span>
+          <span class="soft">Women: a long dress.</span>
+          <span class="soft">Parts of the evening are on grass, so skip stilettos. Block heels or flats are best.</span>
+        </div>
+        <div class="blk">
+          <span>Sunday — brunch</span>
+          <span class="soft">Anything goes. Come as you are.</span>
+        </div>
+        <div class="blk">
+          <span>Weather</span>
+          <span class="soft">Early October in Middleburg is usually around 70° during the day and in the 40s at night. Bring a jacket or a wrap for after dark.</span>
+        </div>
       </div></div></div>
     </section>
 
@@ -304,7 +323,7 @@
   }
   function typeset(el){
     var tw = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null), nodes = [], n;
-    while ((n = tw.nextNode())) if (n.nodeValue.trim()) nodes.push(n);
+    while ((n = tw.nextNode())) if (n.nodeValue.trim() && !n.parentNode.closest('a')) nodes.push(n);
     nodes.forEach(function(node){
       var frag = document.createDocumentFragment();
       node.nodeValue.split(/(\s+)/).forEach(function(part){
@@ -364,7 +383,7 @@
     var lab = spline(p), c = rgbOf(lab);
     root.style.setProperty('--sky', 'rgb(' + c.join(',') + ')');
     var d = lab[0] < .58;
-    if (d !== dark){ dark = d; document.body.style.color = d ? '#EFE8DD' : '#2A2622'; }
+    if (d !== dark){ dark = d; document.body.style.color = d ? '#EFE8DD' : '#2A2622'; root.style.setProperty('--link', d ? '#9DBBEA' : '#2C5AA0'); }
   }
   function loop(now){
     var dt = last ? Math.min(64, now - last) : 16; last = now;
@@ -413,14 +432,21 @@
   seeOnce(letter, .5, function(){ letter.classList.add('lit'); });
   seeOnce(endline, .6, finale);
 
-  /* ---- one question open at a time ---- */
+  /* ---- one question open at a time; the question you tap stays where it is ---- */
   var secs = [].slice.call(document.querySelectorAll('.sec'));
   secs.forEach(function(sec){
-    sec.querySelector('.row').addEventListener('click', function(){
+    var row = sec.querySelector('.row');
+    row.addEventListener('click', function(){
+      var before = row.getBoundingClientRect().top;
       var was = sec.classList.contains('open');
       secs.forEach(function(s){ s.classList.remove('open'); s.querySelector('.row').setAttribute('aria-expanded','false'); });
-      if (!was){ sec.classList.add('open'); this.setAttribute('aria-expanded','true'); }
-      setTimeout(onScroll, 650);
+      if (!was){ sec.classList.add('open'); row.setAttribute('aria-expanded','true'); }
+      var t0 = performance.now();
+      (function hold(){
+        var d = row.getBoundingClientRect().top - before;
+        if (Math.abs(d) > .5) window.scrollBy(0, d);
+        if (performance.now() - t0 < 800) requestAnimationFrame(hold); else onScroll();
+      })();
     });
   });
 })();
